@@ -17,9 +17,9 @@
             android:layout_width="0dp"
             android:layout_height="50dp"
             android:layout_weight="2"
-            android:scaleType="fitCenter"
             android:gravity="center"
-            tools:srcCompat="@tools:sample/avatars" />
+            android:scaleType="fitCenter"
+            app:srcCompat="@drawable/contact" />
 
         <TextView
             android:id="@+id/idContacto"
