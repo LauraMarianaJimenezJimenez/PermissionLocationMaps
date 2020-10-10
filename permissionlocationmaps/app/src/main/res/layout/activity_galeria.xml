@@ -10,6 +10,7 @@
         android:id="@+id/imgFoto"
         android:layout_width="310dp"
         android:layout_height="310dp"
+        android:scaleType="fitXY"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
