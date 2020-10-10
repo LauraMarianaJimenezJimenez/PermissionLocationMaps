@@ -26,5 +26,13 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        imagebtnCamara.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(view.getContext(),GaleriaActivity.class);
+                startActivity(intent);
+            }
+        });
+
     }
 }
