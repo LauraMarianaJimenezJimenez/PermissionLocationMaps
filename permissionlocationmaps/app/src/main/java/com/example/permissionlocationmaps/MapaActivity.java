@@ -6,6 +6,7 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.location.Address;
 import android.location.Geocoder;
 import android.os.Bundle;
 
@@ -24,7 +25,10 @@ import android.content.IntentSender;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.util.Log;
+import android.view.KeyEvent;
+import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.common.api.ApiException;
@@ -48,6 +52,8 @@ import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 
+import java.io.IOException;
+import java.util.List;
 
 public class MapaActivity extends FragmentActivity implements OnMapReadyCallback {
 
@@ -61,13 +67,14 @@ public class MapaActivity extends FragmentActivity implements OnMapReadyCallback
     Sensor lightSensor;
     SensorEventListener lightSensorListener;
     EditText search;
-    Geocoder nGeocoder;
-
+    Geocoder mGeocoder;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_mapa);
+        search = findViewById(R.id.searchMap);
+        //Map styles
         sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         lightSensor = sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT);
         lightSensorListener = new SensorEventListener() {
@@ -86,6 +93,34 @@ public class MapaActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onAccuracyChanged(Sensor sensor, int accuracy) {}
         };
+        //Search addresses
+        mGeocoder = new Geocoder(getBaseContext());
+        search.setOnEditorActionListener((new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView textView, int actionId, KeyEvent keyEvent) {
+                if(actionId== EditorInfo.IME_ACTION_SEND){
+                    String addressString = search.getText().toString();
+                    if(!addressString.isEmpty()){
+                        try{
+                            List<Address> addresses = mGeocoder.getFromLocationName(addressString, 2);
+                            if(addresses != null && !addresses.isEmpty()){
+                                Address addressResult = addresses.get(0);
+                                LatLng position = new LatLng(addressResult.getLatitude(), addressResult.getLongitude());
+                                if(mMap!=null){
+                                    mMap.addMarker(new MarkerOptions().position(position).title("Dirección encontrada."));
+                                    mMap.moveCamera(CameraUpdateFactory.newLatLng(position));
+                                }else{Toast.makeText(MapaActivity.this, "Dirección no encontrada.", Toast.LENGTH_SHORT).show();}
+
+                            }
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }else{Toast.makeText(MapaActivity.this, "La dirección esta vacía.", Toast.LENGTH_SHORT).show();}
+                }
+                return false;
+            }
+        }));
+
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
@@ -210,8 +245,7 @@ public class MapaActivity extends FragmentActivity implements OnMapReadyCallback
     protected void onResume() {
         super.onResume();
         startLocationUpdates();
-        sensorManager.registerListener(lightSensorListener, lightSensor,
-                SensorManager.SENSOR_DELAY_NORMAL);
+        sensorManager.registerListener(lightSensorListener, lightSensor, SensorManager.SENSOR_DELAY_NORMAL);
     }
 
     @Override
