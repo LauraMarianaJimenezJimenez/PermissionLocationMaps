@@ -68,6 +68,7 @@ public class MapaActivity extends FragmentActivity implements OnMapReadyCallback
     SensorEventListener lightSensorListener;
     EditText search;
     Geocoder mGeocoder;
+    LatLng ubactual;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -107,10 +108,13 @@ public class MapaActivity extends FragmentActivity implements OnMapReadyCallback
                                 Address addressResult = addresses.get(0);
                                 LatLng position = new LatLng(addressResult.getLatitude(), addressResult.getLongitude());
                                 if(mMap!=null){
+                                    //Agregar marcador
                                     mMap.addMarker(new MarkerOptions().position(position).title("Dirección encontrada."));
                                     mMap.moveCamera(CameraUpdateFactory.newLatLng(position));
+                                    //Mostrar distancia
+                                    //String distancia = String.valueOf(calculateDistance(ubactual.latitude, pos.latitude, ubactual.longitude, pos.longitude));
+                                    Toast.makeText(MapaActivity.this, "Distancia: " + distancia, Toast.LENGTH_SHORT).show();
                                 }else{Toast.makeText(MapaActivity.this, "Dirección no encontrada.", Toast.LENGTH_SHORT).show();}
-
                             }
                         } catch (IOException e) {
                             e.printStackTrace();
@@ -128,7 +132,6 @@ public class MapaActivity extends FragmentActivity implements OnMapReadyCallback
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
-
         mMap = googleMap;
         mFusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
         mLocationRequest = createLocationRequest();
@@ -136,22 +139,43 @@ public class MapaActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onLocationResult(LocationResult locationResult) {
                 super.onLocationResult(locationResult);
-                Location location = locationResult.getLastLocation();
-                if(location!=null)
-                {
+                Location my_location = locationResult.getLastLocation();
+                if(my_location!=null) {
                     Toast.makeText(getBaseContext(),"TENGO UNA UBICACION",Toast.LENGTH_LONG).show();
-                    LatLng ubactual = new LatLng(location.getLatitude(), location.getLongitude());
+                    ubactual = new LatLng(my_location.getLatitude(), my_location.getLongitude());
                     mMap.addMarker(new MarkerOptions().position(ubactual).title("Ubicación actual"));
-                    Marker bogotaAzul = mMap.addMarker(new MarkerOptions()
-                            .position(ubactual).icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)));
                     mMap.moveCamera(CameraUpdateFactory.newLatLng(ubactual));
-                    bogotaAzul.setVisible(true);
                 }
             }
         };
 
+        mMap.setOnMapLongClickListener(new GoogleMap.OnMapLongClickListener() {
+            @Override
+            public void onMapLongClick(LatLng pos) {
+                mMap.clear();
+                mMap.addMarker(new MarkerOptions().position(pos).title(geoCoderSearchLatLng(pos)));
+
+                //Mostrar distancia
+                String distancia = String.valueOf(calculateDistance(ubactual.latitude, pos.latitude, ubactual.longitude, pos.longitude));
+                Toast.makeText(MapaActivity.this, "Distancia: " + distancia, Toast.LENGTH_SHORT).show();
+            }
+        });
+
         requestPermission(this, Manifest.permission.ACCESS_FINE_LOCATION,"Es necesario para el funcionamiento correcto de la APP.",LOCATION_PERMESSION_REQUEST);
         usePermition();
+    }
+
+    private String geoCoderSearchLatLng(LatLng latlng){
+        String address = "";
+        try{
+            List<Address> res = mGeocoder.getFromLocation(latlng.latitude, latlng.longitude, 2);
+            if(res != null && res.size() > 0){
+                address = res.get(0).getAddressLine(0);
+            }
+        }catch(IOException e){
+            e.printStackTrace();
+        }
+        return address;
     }
 
     public static double calculateDistance (double lat1, double lat2, double lon1, double lon2) {
