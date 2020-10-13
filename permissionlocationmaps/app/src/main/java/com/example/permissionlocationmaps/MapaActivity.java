@@ -2,6 +2,9 @@ package com.example.permissionlocationmaps;
 
 import androidx.fragment.app.FragmentActivity;
 
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.location.Geocoder;
 import android.os.Bundle;
@@ -12,20 +15,16 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import android.Manifest;
 import android.app.Activity;
-import android.content.Intent;
 import android.content.IntentSender;
 import android.content.pm.PackageManager;
 import android.location.Location;
-import android.os.Bundle;
+import android.util.Log;
 import android.widget.EditText;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.common.api.ApiException;
@@ -40,8 +39,10 @@ import com.google.android.gms.location.LocationSettingsRequest;
 import com.google.android.gms.location.LocationSettingsResponse;
 import com.google.android.gms.location.LocationSettingsStatusCodes;
 import com.google.android.gms.location.SettingsClient;
-import com.google.android.gms.maps.internal.ICameraUpdateFactoryDelegate;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MapStyleOptions;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -56,6 +57,9 @@ public class MapaActivity extends FragmentActivity implements OnMapReadyCallback
     private LocationRequest mLocationRequest;
     private LocationCallback mLocationCallback;
     private GoogleMap mMap;
+    SensorManager sensorManager;
+    Sensor lightSensor;
+    SensorEventListener lightSensorListener;
     EditText search;
     Geocoder nGeocoder;
 
@@ -64,6 +68,24 @@ public class MapaActivity extends FragmentActivity implements OnMapReadyCallback
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_mapa);
+        sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
+        lightSensor = sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT);
+        lightSensorListener = new SensorEventListener() {
+            @Override
+            public void onSensorChanged(SensorEvent event) {
+                if (mMap != null) {
+                    if (event.values[0] < 5000) {
+                        Log.i("MAPS", "DARK MAP " + event.values[0]);
+                        mMap.setMapStyle(MapStyleOptions.loadRawResourceStyle(MapaActivity.this, R.raw.dark_style));
+                    } else {
+                        Log.i("MAPS", "LIGHT MAP " + event.values[0]);
+                        mMap.setMapStyle(MapStyleOptions.loadRawResourceStyle(MapaActivity.this, R.raw.light_style));
+                    }
+                }
+            }
+            @Override
+            public void onAccuracyChanged(Sensor sensor, int accuracy) {}
+        };
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
@@ -85,7 +107,10 @@ public class MapaActivity extends FragmentActivity implements OnMapReadyCallback
                     Toast.makeText(getBaseContext(),"TENGO UNA UBICACION",Toast.LENGTH_LONG).show();
                     LatLng ubactual = new LatLng(location.getLatitude(), location.getLongitude());
                     mMap.addMarker(new MarkerOptions().position(ubactual).title("Ubicación actual"));
+                    Marker bogotaAzul = mMap.addMarker(new MarkerOptions()
+                            .position(ubactual).icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)));
                     mMap.moveCamera(CameraUpdateFactory.newLatLng(ubactual));
+                    bogotaAzul.setVisible(true);
                 }
             }
         };
@@ -185,11 +210,14 @@ public class MapaActivity extends FragmentActivity implements OnMapReadyCallback
     protected void onResume() {
         super.onResume();
         startLocationUpdates();
+        sensorManager.registerListener(lightSensorListener, lightSensor,
+                SensorManager.SENSOR_DELAY_NORMAL);
     }
 
     @Override
     protected void onPause() {
         super.onPause();
         stopLocationUpdates();
+        sensorManager.unregisterListener(lightSensorListener);
     }
 }
