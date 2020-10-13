@@ -75,6 +75,23 @@ public class MapaActivity extends FragmentActivity implements OnMapReadyCallback
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_mapa);
         search = findViewById(R.id.searchMap);
+        //Marcador inicial
+        mFusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
+        mLocationRequest = createLocationRequest();
+        mLocationCallback = new LocationCallback(){
+            @Override
+            public void onLocationResult(LocationResult locationResult) {
+                Log.i("banderA", "ESTOY EN EL ONLOCATIONRESULT");
+                super.onLocationResult(locationResult);
+                Location my_location = locationResult.getLastLocation();
+                if(my_location!=null) {
+                    mMap.clear();
+                    ubactual = new LatLng(my_location.getLatitude(), my_location.getLongitude());
+                    mMap.addMarker(new MarkerOptions().position(ubactual).title("Ubicación actual"));
+                    mMap.moveCamera(CameraUpdateFactory.newLatLng(ubactual));
+                }
+            }
+        };
         //Map styles
         sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         lightSensor = sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT);
@@ -112,7 +129,7 @@ public class MapaActivity extends FragmentActivity implements OnMapReadyCallback
                                     mMap.addMarker(new MarkerOptions().position(position).title("Dirección encontrada."));
                                     mMap.moveCamera(CameraUpdateFactory.newLatLng(position));
                                     //Mostrar distancia
-                                    //String distancia = String.valueOf(calculateDistance(ubactual.latitude, pos.latitude, ubactual.longitude, pos.longitude));
+                                    String distancia = String.valueOf(calculateDistance(ubactual.latitude, position.latitude, ubactual.longitude, position.longitude));
                                     Toast.makeText(MapaActivity.this, "Distancia: " + distancia, Toast.LENGTH_SHORT).show();
                                 }else{Toast.makeText(MapaActivity.this, "Dirección no encontrada.", Toast.LENGTH_SHORT).show();}
                             }
@@ -125,6 +142,9 @@ public class MapaActivity extends FragmentActivity implements OnMapReadyCallback
             }
         }));
 
+        requestPermission(this, Manifest.permission.ACCESS_FINE_LOCATION,"Es necesario para el funcionamiento correcto de la APP.",LOCATION_PERMESSION_REQUEST);
+        usePermition();
+
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
@@ -133,26 +153,10 @@ public class MapaActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-        mFusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
-        mLocationRequest = createLocationRequest();
-        mLocationCallback = new LocationCallback(){
-            @Override
-            public void onLocationResult(LocationResult locationResult) {
-                super.onLocationResult(locationResult);
-                Location my_location = locationResult.getLastLocation();
-                if(my_location!=null) {
-                    Toast.makeText(getBaseContext(),"TENGO UNA UBICACION",Toast.LENGTH_LONG).show();
-                    ubactual = new LatLng(my_location.getLatitude(), my_location.getLongitude());
-                    mMap.addMarker(new MarkerOptions().position(ubactual).title("Ubicación actual"));
-                    mMap.moveCamera(CameraUpdateFactory.newLatLng(ubactual));
-                }
-            }
-        };
-
         mMap.setOnMapLongClickListener(new GoogleMap.OnMapLongClickListener() {
             @Override
             public void onMapLongClick(LatLng pos) {
-                mMap.clear();
+                //mMap.clear();
                 mMap.addMarker(new MarkerOptions().position(pos).title(geoCoderSearchLatLng(pos)));
 
                 //Mostrar distancia
@@ -161,8 +165,6 @@ public class MapaActivity extends FragmentActivity implements OnMapReadyCallback
             }
         });
 
-        requestPermission(this, Manifest.permission.ACCESS_FINE_LOCATION,"Es necesario para el funcionamiento correcto de la APP.",LOCATION_PERMESSION_REQUEST);
-        usePermition();
     }
 
     private String geoCoderSearchLatLng(LatLng latlng){
@@ -193,14 +195,12 @@ public class MapaActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     private void usePermition() {
-        if(ContextCompat.checkSelfPermission(getBaseContext(),Manifest.permission.ACCESS_FINE_LOCATION)==PackageManager.PERMISSION_GRANTED)
-        {
+        if(ContextCompat.checkSelfPermission(getBaseContext(),Manifest.permission.ACCESS_FINE_LOCATION)==PackageManager.PERMISSION_GRANTED) {
             checkSettings();
         }
     }
 
-    private void checkSettings()
-    {
+    private void checkSettings() {
         LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder().addLocationRequest(mLocationRequest);
         SettingsClient client =  LocationServices.getSettingsClient(this);
         Task<LocationSettingsResponse> task = client.checkLocationSettings(builder.build());
@@ -232,10 +232,8 @@ public class MapaActivity extends FragmentActivity implements OnMapReadyCallback
         });
     }
 
-    private void startLocationUpdates()
-    {
-        if(ContextCompat.checkSelfPermission(getBaseContext(),Manifest.permission.CAMERA)==PackageManager.PERMISSION_GRANTED)
-        {
+    private void startLocationUpdates() {
+        if(ContextCompat.checkSelfPermission(getBaseContext(),Manifest.permission.ACCESS_FINE_LOCATION)==PackageManager.PERMISSION_GRANTED) {
             mFusedLocationProviderClient.requestLocationUpdates(mLocationRequest,mLocationCallback,null);
         }
     }
@@ -248,12 +246,10 @@ public class MapaActivity extends FragmentActivity implements OnMapReadyCallback
         return locationRequest;
     }
 
-    private void requestPermission(Activity context, String permiso, String justificacion, int idCode)
-    {
+    private void requestPermission(Activity context, String permiso, String justificacion, int idCode) {
         if(ContextCompat.checkSelfPermission(context,permiso) != PackageManager.PERMISSION_GRANTED)
         {
-            if(ActivityCompat.shouldShowRequestPermissionRationale(context, permiso))
-            {
+            if(ActivityCompat.shouldShowRequestPermissionRationale(context, permiso)) {
                 //Show an explanation to user asynchronously
             }
             //request permission
