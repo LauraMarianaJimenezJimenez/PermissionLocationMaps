@@ -34,5 +34,13 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        imagebtnMapa.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(view.getContext(),MapaActivity.class);
+                startActivity(intent);
+            }
+        });
+
     }
 }
