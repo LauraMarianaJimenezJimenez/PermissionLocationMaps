@@ -126,7 +126,7 @@ public class MapaActivity extends FragmentActivity implements OnMapReadyCallback
                                 LatLng position = new LatLng(addressResult.getLatitude(), addressResult.getLongitude());
                                 if(mMap!=null){
                                     //Agregar marcador
-                                    mMap.addMarker(new MarkerOptions().position(position).title("Dirección encontrada."));
+                                    Marker m = mMap.addMarker(new MarkerOptions().position(position).title("Dirección encontrada").icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)));
                                     mMap.moveCamera(CameraUpdateFactory.newLatLng(position));
                                     //Mostrar distancia
                                     String distancia = String.valueOf(calculateDistance(ubactual.latitude, position.latitude, ubactual.longitude, position.longitude));
@@ -157,8 +157,8 @@ public class MapaActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onMapLongClick(LatLng pos) {
                 //mMap.clear();
-                mMap.addMarker(new MarkerOptions().position(pos).title(geoCoderSearchLatLng(pos)));
-
+                Marker m = mMap.addMarker(new MarkerOptions().position(pos).title(geoCoderSearchLatLng(pos)).icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)));
+                mMap.moveCamera(CameraUpdateFactory.newLatLng(pos));
                 //Mostrar distancia
                 String distancia = String.valueOf(calculateDistance(ubactual.latitude, pos.latitude, ubactual.longitude, pos.longitude));
                 Toast.makeText(MapaActivity.this, "Distancia: " + distancia, Toast.LENGTH_SHORT).show();
@@ -240,8 +240,8 @@ public class MapaActivity extends FragmentActivity implements OnMapReadyCallback
 
     protected LocationRequest createLocationRequest() {
         LocationRequest locationRequest = new LocationRequest();
-        locationRequest.setInterval(10000);
-        locationRequest.setFastestInterval(5000);
+        locationRequest.setInterval(70000);
+        locationRequest.setFastestInterval(70000);
         locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
         return locationRequest;
     }
