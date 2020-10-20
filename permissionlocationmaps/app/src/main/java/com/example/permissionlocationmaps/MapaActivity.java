@@ -81,13 +81,12 @@ public class MapaActivity extends FragmentActivity implements OnMapReadyCallback
         mLocationCallback = new LocationCallback(){
             @Override
             public void onLocationResult(LocationResult locationResult) {
-                Log.i("banderA", "ESTOY EN EL ONLOCATIONRESULT");
                 super.onLocationResult(locationResult);
                 Location my_location = locationResult.getLastLocation();
                 if(my_location!=null) {
                     mMap.clear();
                     ubactual = new LatLng(my_location.getLatitude(), my_location.getLongitude());
-                    mMap.addMarker(new MarkerOptions().position(ubactual).title("Ubicación actual"));
+                    mMap.addMarker(new MarkerOptions().position(ubactual).title("Ubicación actual: " + geoCoderSearchLatLng(ubactual)));
                     mMap.moveCamera(CameraUpdateFactory.newLatLng(ubactual));
                 }
             }
@@ -99,7 +98,7 @@ public class MapaActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onSensorChanged(SensorEvent event) {
                 if (mMap != null) {
-                    if (event.values[0] < 1000) {
+                    if (event.values[0] < 2000) {
                         Log.i("MAPS", "DARK MAP " + event.values[0]);
                         mMap.setMapStyle(MapStyleOptions.loadRawResourceStyle(MapaActivity.this, R.raw.dark_style));
                     } else {
@@ -126,7 +125,7 @@ public class MapaActivity extends FragmentActivity implements OnMapReadyCallback
                                 LatLng position = new LatLng(addressResult.getLatitude(), addressResult.getLongitude());
                                 if(mMap!=null){
                                     //Agregar marcador
-                                    Marker m = mMap.addMarker(new MarkerOptions().position(position).title("Dirección encontrada").icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)));
+                                    Marker m = mMap.addMarker(new MarkerOptions().position(position).title("Dirección encontrada! " + geoCoderSearchLatLng(position)).icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)));
                                     mMap.moveCamera(CameraUpdateFactory.newLatLng(position));
                                     //Mostrar distancia
                                     String distancia = String.valueOf(calculateDistance(ubactual.latitude, position.latitude, ubactual.longitude, position.longitude));
@@ -164,7 +163,6 @@ public class MapaActivity extends FragmentActivity implements OnMapReadyCallback
                 Toast.makeText(MapaActivity.this, "Distancia: " + distancia, Toast.LENGTH_SHORT).show();
             }
         });
-
     }
 
     private String geoCoderSearchLatLng(LatLng latlng){
